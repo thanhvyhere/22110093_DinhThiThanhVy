@@ -120,7 +120,7 @@ p exit
 find /home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file
 ```
 
-![alt text](image.png)
+![alt text](./image/imag-8.png)
 
 system: 0xf7e50db0
 exit: 0xf7e449e0
