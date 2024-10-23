@@ -84,13 +84,6 @@ gcc -g vuln.c -o vuln.out -fno-stack-protector -mpreferred-stack-boundary=2 -z e
     ld -m elf_i386 -o run_file run_file.o
 ```
 
-**Get shell code of run_file.asm by this command**
-```
-for i in $(objdump -d run_file.asm |grep "^ " |cut -f2); do echo -n '\x'$i; done;echo
-```
-![alt text](./image/image-1.png)
-
-
 We can use return-to-libc to solve the problem
 
 Đặt biến môi trường 
